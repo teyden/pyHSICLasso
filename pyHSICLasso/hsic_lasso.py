@@ -8,12 +8,19 @@ from builtins import dict, range
 
 from future import standard_library
 
+import enum
 import numpy as np
 from joblib import Parallel, delayed
 
-from .kernel_tools import kernel_delta_norm, kernel_gaussian
+from .kernel_tools import kernel_delta_norm, kernel_gaussian, kernel_custom
 
 standard_library.install_aliases()
+
+class CustomKernel(enum.Enum): 
+    Jaccard = "jaccard"
+    BrayCurtis = "braycurtis"
+    UnweightedUniFrac = "unweighted_unifrac"
+    WeightedUniFrac = "weighted_unifrac"
 
 def hsic_lasso(X, Y, y_kernel, x_kernel='Gaussian', n_jobs=-1, discarded=0, B=0, M=1):
     """
@@ -30,10 +37,12 @@ def hsic_lasso(X, Y, y_kernel, x_kernel='Gaussian', n_jobs=-1, discarded=0, B=0,
     d, n = X.shape
     dy = Y.shape[0]
 
+    # Computes the kernel for the outcome
     L = compute_kernel(Y, y_kernel, B, M, discarded)
     L = np.reshape(L,(n * B * M,1))
 
     # Preparing design matrix for HSIC Lars
+    # TODO - what is the output like?
     result = Parallel(n_jobs=n_jobs)([delayed(parallel_compute_kernel)(
         np.reshape(X[k,:],(1,n)), x_kernel, k, B, M, n, discarded) for k in range(d)])
 
@@ -45,17 +54,31 @@ def hsic_lasso(X, Y, y_kernel, x_kernel='Gaussian', n_jobs=-1, discarded=0, B=0,
 
     result = dict(result)
 
+    # This is the flattened kernel "matrix" for the X input. It has n * B * M rows, and d number of feature columns.
     K = np.array([result[k] for k in range(d)]).T
+
+    # This is the a dot product of the transposed kernel matrix for the X input and the kernel matrix for the outcome
+    # What is it used for?
     KtL = np.dot(K.T, L)
 
     return K, KtL, L
+
+def _compute_custom_kernel(x, kernel):
+    try:    
+        _kernel = CustomKernel[kernel].value
+    except:
+        print("Kernel metric provided doesn't match valid options.")
+    return kernel_custom(x, _kernel)
 
 def compute_kernel(x, kernel, B = 0, M = 1, discarded = 0):
 
     d,n = x.shape
 
     H = np.eye(B, dtype=np.float32) - 1 / B * np.ones(B, dtype=np.float32)
-    K = np.zeros(n * B * M, dtype=np.float32)
+    K = np.zeros(n * B * M, dtype=np.float32) # Flattened matrix
+
+    if kernel in ["Jaccard", "Bray-Curtis"]:
+        return _compute_custom_kernel(x, kernel)
 
     # Normalize data
     if kernel == "Gaussian":
@@ -68,19 +91,21 @@ def compute_kernel(x, kernel, B = 0, M = 1, discarded = 0):
         np.random.seed(m)
         index = np.random.permutation(index)
 
+        # I believe the distance between i and j will always be B. This defines the block size to be computed.
         for i in range(0, n - discarded, B):
             j = min(n, i + B)
 
+            block = x[:,index[i:j]] # All rows (the outcome variables), just columns i to j (the samples)
             if kernel == 'Gaussian':
-                k = kernel_gaussian(x[:,index[i:j]], x[:,index[i:j]], np.sqrt(d))
+                k = kernel_gaussian(block, block, np.sqrt(d))
             elif kernel == 'Delta':
-                k = kernel_delta_norm(x[:,index[i:j]], x[:, index[i:j]])
+                k = kernel_delta_norm(block, block)
 
             k = np.dot(np.dot(H, k), H)
 
             # Normalize HSIC tr(k*k) = 1
             k = k / (np.linalg.norm(k, 'fro') + 10e-10)
-            K[st:ed] = k.flatten()
+            K[st:ed] = k.flatten() # This sets the columns for K from range "st" up to "ed"
             st += B ** 2
             ed += B ** 2
 

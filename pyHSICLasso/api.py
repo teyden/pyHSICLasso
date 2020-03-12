@@ -137,6 +137,7 @@ of blocks {} will be approximated to {}.".format(B, n, numblocks, int(numblocks)
             #print(betas)
             self.Xty = self.Xty - betas*np.dot(self.X.transpose(),Kc)
 
+        # Given the kernel matrices, solve it and identify important features.
         self.path, self.beta, self.A, self.lam, self.A_neighbors, \
             self.A_neighbors_score = nlars(
                 self.X, self.Xty, num_feat, self.max_neighbors)
