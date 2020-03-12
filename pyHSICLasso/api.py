@@ -64,9 +64,10 @@ class HSICLasso(object):
         self._check_shape()
         return True
 
-    def regression(self, num_feat=5, B=20, M=3, discrete_x=False, max_neighbors=10, n_jobs=-1, covars = np.array([]),covars_kernel="Gaussian"):
+    def regression(self, num_feat=5, y_kernel="Gaussian", x_kernel="Gaussian", B=20, M=3, discrete_x=False, max_neighbors=10, n_jobs=-1, covars = np.array([]),covars_kernel="Gaussian"):
         self._run_hsic_lasso(num_feat=num_feat,
                              y_kernel="Gaussian",
+                             x_kernel="Gaussian",
                              B=B, M=M,
                              discrete_x=discrete_x,
                              max_neighbors=max_neighbors,
@@ -76,9 +77,10 @@ class HSICLasso(object):
 
         return True
 
-    def classification(self, num_feat=5, B=20, M=3, discrete_x=False, max_neighbors=10, n_jobs=-1, covars = np.array([]),covars_kernel="Gaussian"):
+    def classification(self, num_feat=5, y_kernel="Delta", x_kernel="Gaussian", B=20, M=3, discrete_x=False, max_neighbors=10, n_jobs=-1, covars = np.array([]),covars_kernel="Gaussian"):
         self._run_hsic_lasso(num_feat=num_feat,
                              y_kernel="Delta",
+                             x_kernel="Gaussian",
                              B=B, M=M,
                              discrete_x=discrete_x,
                              max_neighbors=max_neighbors,
@@ -88,14 +90,14 @@ class HSICLasso(object):
 
         return True
 
-    def _run_hsic_lasso(self, y_kernel, num_feat, B, M, discrete_x, max_neighbors, n_jobs, covars, covars_kernel):
+    def _run_hsic_lasso(self, num_feat, y_kernel, x_kernel, B, M, discrete_x, max_neighbors, n_jobs, covars, covars_kernel):
 
         if self.X_in is None or self.Y_in is None:
             raise UnboundLocalError("Input your data")
         self.max_neighbors = max_neighbors
         n = self.X_in.shape[1]
         B = B if B else n
-        x_kernel = "Delta" if discrete_x else "Gaussian"
+        x_kernel = "Delta" if discrete_x else x_kernel
         numblocks = n / B
         discarded = n % B
 
@@ -124,8 +126,8 @@ of blocks {} will be approximated to {}.".format(B, n, numblocks, int(numblocks)
             if self.X_in.shape[1] != covars.shape[0]:
                 raise UnboundLocalError("The number of rows in the covars matrix should be " + str(self.X_in.shape[1]))
 
-            if covars_kernel == "Gaussian":
-                Kc = compute_kernel(covars.transpose(), 'Gaussian', B, M, discarded)
+            if covars_kernel in ["Gaussian", "Jaccard", "Bray-Curtis"]:
+                Kc = compute_kernel(covars.transpose(), covars_kernel, B, M, discarded)
             else:
                 Kc = compute_kernel(covars.transpose(), 'Delta', B, M, discarded)
             Kc = np.reshape(Kc,(n * B * M,1))

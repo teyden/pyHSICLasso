@@ -80,8 +80,8 @@ def kernel_custom(X, kernel):
 # # Now, do the same with Jaccard, but have to figure out how to convert it to a kernel.
 # # Does it need to be corrected somehow? Is there an assumption that it comes from a reproducing kernel hilbert space?
 #
-# pairwise_dists_jaccard = squareform(pdist(x, 'jaccard'))
 #
+#pairwise_dists_jaccard = squareform(pdist(x, 'jaccard'))
 # # pairwise_dists_jaccard = skbio.diversity.beta_diversity(metric=kernel, counts=x)
 #
 # pairwise_dists_braycurtis = squareform(pdist(x, 'braycurtis'))
