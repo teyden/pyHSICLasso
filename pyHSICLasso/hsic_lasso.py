@@ -77,9 +77,6 @@ def compute_kernel(x, kernel, B = 0, M = 1, discarded = 0):
     H = np.eye(B, dtype=np.float32) - 1 / B * np.ones(B, dtype=np.float32)
     K = np.zeros(n * B * M, dtype=np.float32) # Flattened matrix
 
-    if kernel in ["Jaccard", "Bray-Curtis"]:
-        return _compute_custom_kernel(x, kernel)
-
     # Normalize data
     if kernel == "Gaussian":
         x = (x / (x.std() + 10e-20)).astype(np.float32)
@@ -100,6 +97,8 @@ def compute_kernel(x, kernel, B = 0, M = 1, discarded = 0):
                 k = kernel_gaussian(block, block, np.sqrt(d))
             elif kernel == 'Delta':
                 k = kernel_delta_norm(block, block)
+            elif kernel in ["Jaccard", "Bray-Curtis"]:  # TODO test this; how is this k diff from the above?
+                k = _compute_custom_kernel(block)
 
             k = np.dot(np.dot(H, k), H)
 
