@@ -98,7 +98,7 @@ def compute_kernel(x, kernel, B = 0, M = 1, discarded = 0):
             elif kernel == 'Delta':
                 k = kernel_delta_norm(block, block)
             elif kernel in ["Jaccard", "Bray-Curtis"]:  # TODO test this; how is this k diff from the above?
-                k = _compute_custom_kernel(block, kernel)
+                k = _compute_custom_kernel(block.T, kernel)
 
             k = np.dot(np.dot(H, k), H)
 
