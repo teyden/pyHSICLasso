@@ -52,7 +52,7 @@ def kernel_gaussian(X_in_1, X_in_2, sigma):
     return K
 
 def kernel_custom(X, kernel):
-    pairwise_distance_matrix = squareform(pdist(X, 'jaccard'))
+    pairwise_distance_matrix = squareform(pdist(X, kernel))
     print(pairwise_distance_matrix)
     # TODO apply positive semidefinite correction? 
     return pairwise_distance_matrix
