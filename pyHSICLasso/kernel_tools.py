@@ -7,8 +7,8 @@ from __future__ import (absolute_import, division, print_function,
 from future import standard_library
 
 from scipy.spatial.distance import pdist, squareform
+from sklearn.metrics import pairwise_distances
 import numpy as np
-import sklearn as sk
 
 standard_library.install_aliases()
 
@@ -53,9 +53,7 @@ def kernel_gaussian(X_in_1, X_in_2, sigma):
     return K
 
 def kernel_custom(X, kernel):
-    pairwise_distance_matrix = sk.metrics.pairwise_distances(X, metric=kernel)
-    print(X)
-    print(pairwise_distance_matrix)
+    pairwise_distance_matrix = pairwise_distances(X, metric=kernel)
     # TODO apply positive semidefinite correction? 
     return pairwise_distance_matrix
 
