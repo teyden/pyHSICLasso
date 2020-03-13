@@ -66,8 +66,8 @@ class HSICLasso(object):
 
     def regression(self, num_feat=5, y_kernel="Gaussian", x_kernel="Gaussian", B=20, M=3, discrete_x=False, max_neighbors=10, n_jobs=-1, covars = np.array([]),covars_kernel="Gaussian"):
         self._run_hsic_lasso(num_feat=num_feat,
-                             y_kernel="Gaussian",
-                             x_kernel="Gaussian",
+                             y_kernel=y_kernel,
+                             x_kernel=x_kernel,
                              B=B, M=M,
                              discrete_x=discrete_x,
                              max_neighbors=max_neighbors,
@@ -79,8 +79,8 @@ class HSICLasso(object):
 
     def classification(self, num_feat=5, y_kernel="Delta", x_kernel="Gaussian", B=20, M=3, discrete_x=False, max_neighbors=10, n_jobs=-1, covars = np.array([]),covars_kernel="Gaussian"):
         self._run_hsic_lasso(num_feat=num_feat,
-                             y_kernel="Delta",
-                             x_kernel="Gaussian",
+                             y_kernel=y_kernel,
+                             x_kernel=x_kernel,
                              B=B, M=M,
                              discrete_x=discrete_x,
                              max_neighbors=max_neighbors,

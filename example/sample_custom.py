@@ -52,5 +52,5 @@ Setting B=5 performs vanilla HSIC lasso.
 d = mb.shape[1]-1
 hsic_lasso = HSICLasso()
 hsic_lasso.input(X, Y, featname=OTU_IDs)
-hsic_lasso.classification(d, x_kernel="Jaccard", covars=X_covars, covars_kernel="Jaccard", B=5)
+hsic_lasso.classification(d, x_kernel="Jaccard", covars=X_covars, covars_kernel="Gaussian", B=5)
 hsic_lasso.dump()
