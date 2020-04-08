@@ -53,9 +53,33 @@ def kernel_gaussian(X_in_1, X_in_2, sigma):
     return K
 
 def kernel_custom(X, kernel):
-    pairwise_distance_matrix = pairwise_distances(X, metric=kernel)
-    # TODO apply positive semidefinite correction? 
-    return pairwise_distance_matrix
+    if kernel == "jaccard":
+        # Temporarily match the Jaccard computation with the vegan::vegdist implementation in R.
+        D = pairwise_distances(X, metric="braycurtis")
+        D = (2 * D) / (1 + D)
+    else:
+        D = pairwise_distances(X, metric=kernel)
+    K = convert_D_to_K(D)
+    return K
+
+def convert_D_to_K(D):
+    """
+    Applies positive-semidefinite correction to project the distance matrix to the kernel space.
+    :param D: a square distance matrix
+    :return: a square kernel matrix
+    """
+    n, d = D.shape[0]
+    if n != d:
+        raise ValueError("Expects a square distance matrix for conversion to a kernel. " +
+                         "Handling for rectangular matrix not yet supported.")
+    n_I = np.array([1] * n)
+    center = np.diag(n_I) - 1 / n
+    # if n != d:
+    #     K = -0.5 * (center @ (D * D)).T @ center
+    K = -0.5 * center @ (D * D) @ center
+    u, s, vh = np.linalg.svd(K)
+    K = u @ np.diag(np.maximum(np.zeros(n), s)) @ vh
+    return K
 
 # data = [[23, 64, 14, 0, 0, 3, 1],
 #          [0, 3, 35, 42, 0, 12, 1],

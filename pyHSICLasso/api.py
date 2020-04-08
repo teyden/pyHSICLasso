@@ -113,7 +113,7 @@ of blocks {} will be approximated to {}.".format(B, n, numblocks, int(numblocks)
         M = 1 + bool(numblocks - 1) * (M - 1)
         print('M set to {}.'.format(M))
         print('Using {} kernel for the features, {} kernel for the outcomes{}.'.format(
-            x_kernel, y_kernel, ' and Gaussian kernel for the covariates' if covars.size else ''))
+            x_kernel, y_kernel, ' and {} kernel for the covariates'.format(covars_kernel) if covars.size else ''))
 
         X,Xty,Ky = hsic_lasso(self.X_in, self.Y_in, y_kernel, x_kernel,
                               n_jobs=n_jobs, discarded=discarded, B=B, M=M)
