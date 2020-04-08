@@ -55,10 +55,10 @@ def run_hsic_lasso(file_path_mb_data, file_path_metadata, outcome, timepoint, ke
 
     if add_constant:
         X = X + 1
-    elif add_pseudo_species:
-        min = kernel_tools.find_nonzero_min(X)
-        X = kernel_tools.add_pseudo_species(X, min)
-        d = d + 1
+    # elif add_pseudo_species:
+    #     min = kernel_tools.find_nonzero_min(X)
+    #     X = kernel_tools.add_pseudo_species(X, min)
+    #     d = d + 1
 
     """
     Setting B=5 performs vanilla HSIC lasso.
@@ -71,7 +71,7 @@ def run_hsic_lasso(file_path_mb_data, file_path_metadata, outcome, timepoint, ke
                               covars_kernel=kernel_methods.covars,
                               covars=X_covars,
                               B=5,
-                              zero_adjust=add_pseudo_species)
+                              zero_adjust=True)
     hsic_lasso.dump()
 
     return hsic_lasso.get_features()

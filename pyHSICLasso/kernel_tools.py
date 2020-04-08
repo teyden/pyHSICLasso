@@ -101,10 +101,14 @@ def add_pseudo_species(X, min_val=None):
         if min_val == 0:
             raise ValueError("This OTU matrix contains all zeros.")
 
-    n, d = X.shape
-    scaffold = np.zeros((n, d + 1)) + min_val
-    scaffold[:, :-1] = X
-    return scaffold
+    if X.shape[1] == 1:
+        X = X.append(min_val)
+    else:
+        n, d = X.shape
+        scaffold = np.zeros((n, d + 1)) + min_val
+        scaffold[:, :-1] = X
+        X = scaffold
+    return X
 
 def zero_adjust_pairwise_distance(X, distance="braycurtis"):
     """
