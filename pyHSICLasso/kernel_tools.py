@@ -86,22 +86,24 @@ def convert_D_to_K(D):
     K = u @ np.diag(np.maximum(np.zeros(n), s)) @ vh
     return K
 
+def find_nonzero_min(X):
+    min_val = np.max(0, np.min(X[X != 0]))
+    return min_val
+
 def add_pseudo_species(X, min_val=None):
     """
     Adds a pseudo column to the X matrix taking the minimum non-zero value of the entire matrix.
     :param X: assumes samples are rows and features are columns
     :return: The augmented matrix.
     """
-    nonzeros = X[X != 0]
-    if len(nonzeros) > 0:
-        min_val = np.min(nonzeros)
+    if min_val is not None:
         X = np.append(X, min_val)
     else:
-        if min_val is not None:
-            X = np.append(X, min_val)
-        else:
-            # Idea: pass in the minimum from up above.
+        min_val = np.max(0, np.min(X[X != 0]))
+        if min_val == 0:
             raise ValueError("This OTU matrix contains all zeros.")
+        else:
+            X = np.append(X, np.max(0, np.min(X[X != 0])))
     return X
 
 def zero_adjust_pairwise_distance(X, distance="braycurtis"):
