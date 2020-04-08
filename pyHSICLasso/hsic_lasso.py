@@ -22,7 +22,7 @@ class CustomKernel(enum.Enum):
     UnweightedUniFrac = "unweighted_unifrac"
     WeightedUniFrac = "weighted_unifrac"
 
-def hsic_lasso(X, Y, y_kernel, x_kernel='Gaussian', n_jobs=-1, discarded=0, B=0, M=1, zero_adjust=True):
+def hsic_lasso(X, Y, y_kernel, x_kernel='Gaussian', zero_adjust=True, n_jobs=-1, discarded=0, B=0, M=1):
     """
     Input:
         X      input_data
