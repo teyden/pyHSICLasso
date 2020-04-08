@@ -7,7 +7,10 @@ from pyHSICLasso import HSICLasso
 
 KernelMethods = namedtuple("KernelMethods", ["y", "x", "covars"])
 
-def run_hsic_lasso(file_path_mb_data, file_path_metadata, outcome, timepoint, kernel_methods):
+def run_hsic_lasso(file_path_mb_data, file_path_metadata, outcome, timepoint, kernel_methods, add_constant=False, add_pseudo_species=False):
+    if add_pseudo_species and add_constant:
+        raise ValueError("Cannot add constant and add a pseudo species at the same time. Pick one.")
+
     print("\n")
     print("#"*100)
     print("######## Testing microbiome data timepoint {} for outcome {}".format(timepoint, outcome))
@@ -47,6 +50,9 @@ def run_hsic_lasso(file_path_mb_data, file_path_metadata, outcome, timepoint, ke
     Y = np.array(metadata[outcome_and_ID_vars[0]])
     X_covars = np.array(metadata[covars])
 
+    if add_constant:
+        X = X + 1
+
     """
     Setting B=5 performs vanilla HSIC lasso.
     """
@@ -58,7 +64,8 @@ def run_hsic_lasso(file_path_mb_data, file_path_metadata, outcome, timepoint, ke
                               x_kernel=kernel_methods.x,
                               covars_kernel=kernel_methods.covars,
                               covars=X_covars,
-                              B=5)
+                              B=5,
+                              zero_adjust=add_pseudo_species)
     hsic_lasso.dump()
 
     return hsic_lasso.get_features()
