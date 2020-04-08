@@ -22,7 +22,7 @@ class CustomKernel(enum.Enum):
     UnweightedUniFrac = "unweighted_unifrac"
     WeightedUniFrac = "weighted_unifrac"
 
-def hsic_lasso(X, Y, y_kernel, x_kernel='Gaussian', n_jobs=-1, discarded=0, B=0, M=1):
+def hsic_lasso(X, Y, y_kernel, x_kernel='Gaussian', n_jobs=-1, discarded=0, B=0, M=1, zero_adjust=True):
     """
     Input:
         X      input_data
@@ -44,7 +44,7 @@ def hsic_lasso(X, Y, y_kernel, x_kernel='Gaussian', n_jobs=-1, discarded=0, B=0,
     # Preparing design matrix for HSIC Lars
     # TODO - what is the output like?
     result = Parallel(n_jobs=n_jobs)([delayed(parallel_compute_kernel)(
-        np.reshape(X[k,:],(1,n)), x_kernel, k, B, M, n, discarded) for k in range(d)])
+        np.reshape(X[k,:],(1,n)), x_kernel, k, B, M, n, discarded, zero_adjust) for k in range(d)])
 
     # non-parallel version for debugging purposes
     # result = []
@@ -63,14 +63,14 @@ def hsic_lasso(X, Y, y_kernel, x_kernel='Gaussian', n_jobs=-1, discarded=0, B=0,
 
     return K, KtL, L
 
-def _compute_custom_kernel(x, kernel):
+def _compute_custom_kernel(x, kernel, zero_adjust=True):
     try:    
         _kernel = CustomKernel[kernel].value
     except:
         print("Kernel metric provided doesn't match valid options.")
-    return kernel_custom(x, _kernel)
+    return kernel_custom(x, _kernel, zero_adjust)
 
-def compute_kernel(x, kernel, B = 0, M = 1, discarded = 0):
+def compute_kernel(x, kernel, B = 0, M = 1, discarded = 0, zero_adjust=True):
 
     d,n = x.shape
 
@@ -98,7 +98,7 @@ def compute_kernel(x, kernel, B = 0, M = 1, discarded = 0):
             elif kernel == 'Delta':
                 k = kernel_delta_norm(block, block)
             elif kernel in ["Jaccard", "BrayCurtis"]:  # TODO test this; how is this k diff from the above?
-                k = _compute_custom_kernel(block.T, kernel)
+                k = _compute_custom_kernel(block.T, kernel, zero_adjust)
             else:
                 raise Exception("Invalid kernel selection.")
 
@@ -112,6 +112,6 @@ def compute_kernel(x, kernel, B = 0, M = 1, discarded = 0):
 
     return K
 
-def parallel_compute_kernel(x, kernel, feature_idx, B, M, n, discarded):
+def parallel_compute_kernel(x, kernel, feature_idx, B, M, n, discarded, zero_adjust):
 
-    return (feature_idx, compute_kernel(x, kernel, B, M, discarded))
+    return (feature_idx, compute_kernel(x, kernel, B, M, discarded, zero_adjust))

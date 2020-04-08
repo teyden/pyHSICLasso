@@ -41,7 +41,6 @@ def kernel_delta(X_in_1, X_in_2):
         K[np.ix_(ind_1, ind_2)] = 1
     return K
 
-
 def kernel_gaussian(X_in_1, X_in_2, sigma):
     n_1 = X_in_1.shape[1]
     n_2 = X_in_2.shape[1]
@@ -52,13 +51,19 @@ def kernel_gaussian(X_in_1, X_in_2, sigma):
     K = np.exp(-dist_2 / (2 * np.power(sigma, 2)))
     return K
 
-def kernel_custom(X, kernel):
-    if kernel == "jaccard":
-        # Temporarily match the Jaccard computation with the vegan::vegdist implementation in R.
-        D = pairwise_distances(X, metric="braycurtis")
-        D = (2 * D) / (1 + D)
+#####################################################################################
+
+def kernel_custom(X, kernel, zero_adjust=True):
+    if zero_adjust:
+        # This zero-adjustment adds a pseudo species
+        D = zero_adjust_pairwise_distance(X, distance=kernel)
     else:
-        D = pairwise_distances(X, metric=kernel)
+        if kernel == "jaccard":
+            # Temporarily match the Jaccard computation with the vegan::vegdist implementation in R.
+            D = pairwise_distances(X, metric="braycurtis")
+            D = (2 * D) / (1 + D)
+        else:
+            D = pairwise_distances(X, metric=kernel)
     K = convert_D_to_K(D)
     return K
 
@@ -80,6 +85,39 @@ def convert_D_to_K(D):
     u, s, vh = np.linalg.svd(K)
     K = u @ np.diag(np.maximum(np.zeros(n), s)) @ vh
     return K
+
+def add_pseudo_species(X):
+    """
+    Adds a pseudo column to the X matrix taking the minimum non-zero value of the entire matrix.
+    :param X: assumes samples are rows and features are columns
+    :return: The augmented matrix.
+    """
+    min = np.min(X[X != 0])
+    X = np.append(X, min)
+    return X
+
+def zero_adjust_pairwise_distance(X, distance="braycurtis"):
+    """
+    Cite: https://github.com/phytomosaic/ecole/blob/master/R/bray0.R
+
+    Tricky fact: if adding a pseudo species with a min count for a "block" vs. the entire X matrix,
+    then it may result in weird results....
+    I'd likely only use this when working with the whole X matrix.
+
+    :param X: an OTU table with samples as rows and OTUs as columns
+    :return:
+    """
+    X = add_pseudo_species(X)
+    if distance == "jaccard":
+        # Temporarily match the Jaccard computation with the vegan::vegdist implementation in R.
+        D = pairwise_distances(X, metric="braycurtis")
+        D = (2 * D) / (1 + D)
+    elif distance == "braycurtis":
+        D = pairwise_distances(X, metric=distance)
+    else:
+        raise ValueError("Only Jaccard and Bray-Curtis distances are supported.")
+    return D
+
 
 # data = [[23, 64, 14, 0, 0, 3, 1],
 #          [0, 3, 35, 42, 0, 12, 1],

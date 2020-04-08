@@ -13,7 +13,6 @@ def run_hsic_lasso(file_path_mb_data, file_path_metadata, outcome, timepoint, ke
     print("######## Testing microbiome data timepoint {} for outcome {}".format(timepoint, outcome))
     print("#"*100)
     mb = pd.read_csv(file_path_mb_data, index_col=0)
-    # mb = mb.T
     metadata = pd.read_csv(file_path_metadata, index_col=0)
 
     print(mb.shape)
@@ -44,7 +43,7 @@ def run_hsic_lasso(file_path_mb_data, file_path_metadata, outcome, timepoint, ke
 
     # Define inputs for HSIC lasso.
     OTU_IDs = mb.columns.values
-    X = np.array(mb) + 1
+    X = np.array(mb)
     Y = np.array(metadata[outcome_and_ID_vars[0]])
     X_covars = np.array(metadata[covars])
 
@@ -55,9 +54,9 @@ def run_hsic_lasso(file_path_mb_data, file_path_metadata, outcome, timepoint, ke
     hsic_lasso = HSICLasso()
     hsic_lasso.input(X, Y, featname=OTU_IDs)
     hsic_lasso.classification(d,
-                              y_kernel="Delta",
-                              x_kernel="BrayCurtis",
-                              covars_kernel="BrayCurtis",
+                              y_kernel=kernel_methods.y,
+                              x_kernel=kernel_methods.x,
+                              covars_kernel=kernel_methods.covars,
                               covars=X_covars,
                               B=5)
     hsic_lasso.dump()
@@ -111,7 +110,6 @@ if __name__ == "__main__":
     }
 
     for key, case in store.items():
-        print(case)
         kernel_methods = KernelMethods(y="Delta", x="BrayCurtis", covars="BrayCurtis")
         print(kernel_methods)
         features = run_hsic_lasso(case["fp_microbiome_data"],
