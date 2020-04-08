@@ -1,9 +1,13 @@
 import pandas as pd
 import numpy as np
 
+from collections import namedtuple
+
 from pyHSICLasso import HSICLasso
 
-def run_hsic_lasso(file_path_mb_data, file_path_metadata, outcome, timepoint):
+KernelMethods = namedtuple("KernelMethods", ["y", "x", "covars"])
+
+def run_hsic_lasso(file_path_mb_data, file_path_metadata, outcome, timepoint, kernel_methods):
     print("\n")
     print("#"*100)
     print("######## Testing microbiome data timepoint {} for outcome {}".format(timepoint, outcome))
@@ -52,8 +56,8 @@ def run_hsic_lasso(file_path_mb_data, file_path_metadata, outcome, timepoint):
     hsic_lasso.input(X, Y, featname=OTU_IDs)
     hsic_lasso.classification(d,
                               y_kernel="Delta",
-                              x_kernel="Jaccard",
-                              covars_kernel="Jaccard",
+                              x_kernel="BrayCurtis",
+                              covars_kernel="BrayCurtis",
                               covars=X_covars,
                               B=5)
     hsic_lasso.dump()
@@ -79,40 +83,56 @@ if __name__ == "__main__":
     # file_path_metadata = "~/Projects/asthma/data/child-study-data-jan-2019/processed/metadata/merged-metadata/merged_metadata__n657_3m_naExcluded.csv"
     # run_hsic_lasso(file_path_mb_data, file_path_metadata, "diseasestatus_3y_binary", "3m")
 
-    ## Test predicting 3y asthma with 3m and 1y samples
-    file_path_mb_data = "/Users/teyden/Desktop/splitted-data-from-server/data_ID__4__3m-ds3y_microbiome.csv"
-    file_path_metadata = "/Users/teyden/Desktop/splitted-data-from-server/data_ID__4__3m-ds3y_metadata.csv"
-    features_3m_ds3y = run_hsic_lasso(file_path_mb_data, file_path_metadata, "diseasestatus_3y_binary", "3m")
-    print(features_3m_ds3y)
+    store = {
+        1: {
+            "fp_microbiome_data": "/Users/teyden/Desktop/splitted-data-from-server/data_ID__4__3m-ds3y_microbiome.csv",
+            "fp_metadata": "/Users/teyden/Desktop/splitted-data-from-server/data_ID__4__3m-ds3y_metadata.csv",
+            "timepoint": "3m",
+            "outcome": "diseasestatus_3y_binary"
+        },
+        2: {
+            "fp_microbiome_data": "/Users/teyden/Desktop/splitted-data-from-server/data_ID__6__1y-ds3y_microbiome.csv",
+            "fp_metadata": "/Users/teyden/Desktop/splitted-data-from-server/data_ID__6__1y-ds3y_metadata.csv",
+            "timepoint": "1y",
+            "outcome": "diseasestatus_3y_binary"
+        },
+        3: {
+            "fp_microbiome_data": "/Users/teyden/Desktop/splitted-data-from-server/data_ID__5__3m-ds5y_microbiome.csv",
+            "fp_metadata": "/Users/teyden/Desktop/splitted-data-from-server/data_ID__5__3m-ds5y_metadata.csv",
+            "timepoint": "3m",
+            "outcome": "diseasestatus_5y_binary"
+        },
+        4: {
+            "fp_microbiome_data": "/Users/teyden/Desktop/splitted-data-from-server/data_ID__7__1y-ds5y_microbiome.csv",
+            "fp_metadata": "/Users/teyden/Desktop/splitted-data-from-server/data_ID__7__1y-ds5y_metadata.csv",
+            "timepoint": "1y",
+            "outcome": "diseasestatus_5y_binary"
+        },
+    }
 
-    file_path_mb_data = "/Users/teyden/Desktop/splitted-data-from-server/data_ID__6__1y-ds3y_microbiome.csv"
-    file_path_metadata = "/Users/teyden/Desktop/splitted-data-from-server/data_ID__6__1y-ds3y_metadata.csv"
-    features_1y_ds3y = run_hsic_lasso(file_path_mb_data, file_path_metadata, "diseasestatus_3y_binary", "1y")
-    print(features_1y_ds3y)
+    for key, case in store.items():
+        print(case)
+        kernel_methods = KernelMethods(y="Delta", x="BrayCurtis", covars="BrayCurtis")
+        print(kernel_methods)
+        features = run_hsic_lasso(case["fp_microbiome_data"],
+                                  case["fp_metadata"],
+                                  case["outcome"],
+                                  case["timepoint"],
+                                  kernel_methods)
+        print(features)
 
-    ## Test predicting 5y asthma with 3m and 1y samples
-    file_path_mb_data = "/Users/teyden/Desktop/splitted-data-from-server/data_ID__5__3m-ds5y_microbiome.csv"
-    file_path_metadata = "/Users/teyden/Desktop/splitted-data-from-server/data_ID__5__3m-ds5y_metadata.csv"
-    features_3m_ds5y = run_hsic_lasso(file_path_mb_data, file_path_metadata, "diseasestatus_5y_binary", "3m")
-    print(features_3m_ds5y)
-
-    file_path_mb_data = "/Users/teyden/Desktop/splitted-data-from-server/data_ID__7__1y-ds5y_microbiome.csv"
-    file_path_metadata = "/Users/teyden/Desktop/splitted-data-from-server/data_ID__7__1y-ds5y_metadata.csv"
-    features_1y_ds5y = run_hsic_lasso(file_path_mb_data, file_path_metadata, "diseasestatus_5y_binary", "1y")
-    print(features_1y_ds5y)
-
-    ## Which OTUs intersect in predicting 3 year asthma between the 3month and 1year samples?
-    intersection_ds3y = [otu for otu in features_3m_ds3y if otu in features_1y_ds3y]
-
-    ## Which one differ?
-    uniq_3m_ds3y = [otu for otu in features_3m_ds3y if otu not in features_1y_ds3y]
-    uniq_1y_ds3y = [otu for otu in features_1y_ds3y if otu not in features_3m_ds3y]
-
-    print("IN COMMON BETWEEN BOTH TIME POINTS FOR DS3Y")
-    print(intersection_ds3y)
-
-    ## Which OTUs intersect in predicting 3 year asthma between the 3month and 1year samples?
-    intersection_ds5y = [otu for otu in features_3m_ds5y if otu in features_1y_ds5y]
-
-    print("IN COMMON BETWEEN BOTH TIME POINTS FOR DS5Y")
-    print(intersection_ds5y)
+    # ## Which OTUs intersect in predicting 3 year asthma between the 3month and 1year samples?
+    # intersection_ds3y = [otu for otu in features_3m_ds3y if otu in features_1y_ds3y]
+    #
+    # ## Which one differ?
+    # uniq_3m_ds3y = [otu for otu in features_3m_ds3y if otu not in features_1y_ds3y]
+    # uniq_1y_ds3y = [otu for otu in features_1y_ds3y if otu not in features_3m_ds3y]
+    #
+    # print("IN COMMON BETWEEN BOTH TIME POINTS FOR DS3Y")
+    # print(intersection_ds3y)
+    #
+    # ## Which OTUs intersect in predicting 3 year asthma between the 3month and 1year samples?
+    # intersection_ds5y = [otu for otu in features_3m_ds5y if otu in features_1y_ds5y]
+    #
+    # print("IN COMMON BETWEEN BOTH TIME POINTS FOR DS5Y")
+    # print(intersection_ds5y)

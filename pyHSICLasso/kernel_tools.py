@@ -68,7 +68,7 @@ def convert_D_to_K(D):
     :param D: a square distance matrix
     :return: a square kernel matrix
     """
-    n, d = D.shape[0]
+    n, d = D.shape
     if n != d:
         raise ValueError("Expects a square distance matrix for conversion to a kernel. " +
                          "Handling for rectangular matrix not yet supported.")
