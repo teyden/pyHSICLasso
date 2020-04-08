@@ -86,7 +86,7 @@ def convert_D_to_K(D):
     K = u @ np.diag(np.maximum(np.zeros(n), s)) @ vh
     return K
 
-def add_pseudo_species(X, min_val):
+def add_pseudo_species(X, min_val=None):
     """
     Adds a pseudo column to the X matrix taking the minimum non-zero value of the entire matrix.
     :param X: assumes samples are rows and features are columns
@@ -97,8 +97,11 @@ def add_pseudo_species(X, min_val):
         min_val = np.min(nonzeros)
         X = np.append(X, min_val)
     else:
-        # Idea: pass in the minimum from up above.
-        raise ValueError("This OTU matrix contains all zeros.")
+        if min_val is not None:
+            X = np.append(X, min_val)
+        else:
+            # Idea: pass in the minimum from up above.
+            raise ValueError("This OTU matrix contains all zeros.")
     return X
 
 def zero_adjust_pairwise_distance(X, distance="braycurtis"):

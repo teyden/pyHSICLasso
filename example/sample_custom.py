@@ -15,6 +15,8 @@ def run_hsic_lasso(file_path_mb_data, file_path_metadata, outcome, timepoint, ke
     print("#"*100)
     print("######## Testing microbiome data timepoint {} for outcome {}".format(timepoint, outcome))
     print("#"*100)
+
+    # Read in the data
     mb = pd.read_csv(file_path_mb_data, index_col=0)
     metadata = pd.read_csv(file_path_metadata, index_col=0)
 
@@ -123,7 +125,8 @@ if __name__ == "__main__":
                                   case["fp_metadata"],
                                   case["outcome"],
                                   case["timepoint"],
-                                  kernel_methods)
+                                  kernel_methods,
+                                  add_constant=True)
         print(features)
 
     # ## Which OTUs intersect in predicting 3 year asthma between the 3month and 1year samples?
