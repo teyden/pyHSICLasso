@@ -96,15 +96,15 @@ def add_pseudo_species(X, min_val=None):
     :param X: assumes samples are rows and features are columns
     :return: The augmented matrix.
     """
-    if min_val is not None:
-        X = np.append(X, min_val)
-    else:
-        min_val = np.max(0, np.min(X[X != 0]))
+    if min_val is None:
+        min_val = find_nonzero_min(X)
         if min_val == 0:
             raise ValueError("This OTU matrix contains all zeros.")
-        else:
-            X = np.append(X, np.max(0, np.min(X[X != 0])))
-    return X
+
+    n, d = X.shape
+    scaffold = np.zeros((n, d + 1)) + min_val
+    scaffold[:, :-1] = X
+    return scaffold
 
 def zero_adjust_pairwise_distance(X, distance="braycurtis"):
     """

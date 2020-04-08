@@ -51,17 +51,18 @@ def run_hsic_lasso(file_path_mb_data, file_path_metadata, outcome, timepoint, ke
     X = np.array(mb)
     Y = np.array(metadata[outcome_and_ID_vars[0]])
     X_covars = np.array(metadata[covars])
+    d = mb.shape[1] - 1
 
     if add_constant:
         X = X + 1
     elif add_pseudo_species:
         min = kernel_tools.find_nonzero_min(X)
         X = kernel_tools.add_pseudo_species(X, min)
+        d = d + 1
 
     """
     Setting B=5 performs vanilla HSIC lasso.
     """
-    d = mb.shape[1] - 1
     hsic_lasso = HSICLasso()
     hsic_lasso.input(X, Y, featname=OTU_IDs)
     hsic_lasso.classification(d,
