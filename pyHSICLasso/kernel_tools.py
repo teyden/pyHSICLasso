@@ -87,7 +87,7 @@ def convert_D_to_K(D):
     return K
 
 def find_nonzero_min(X):
-    min_val = np.max(0, np.min(X[X != 0]))
+    min_val = max(0, np.min(X[X != 0]))
     return min_val
 
 def add_pseudo_species(X, min_val=None):

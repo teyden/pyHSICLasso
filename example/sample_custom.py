@@ -3,7 +3,7 @@ import numpy as np
 
 from collections import namedtuple
 
-from pyHSICLasso import HSICLasso
+from pyHSICLasso import HSICLasso, kernel_tools
 
 KernelMethods = namedtuple("KernelMethods", ["y", "x", "covars"])
 
@@ -54,6 +54,9 @@ def run_hsic_lasso(file_path_mb_data, file_path_metadata, outcome, timepoint, ke
 
     if add_constant:
         X = X + 1
+    elif add_pseudo_species:
+        min = kernel_tools.find_nonzero_min(X)
+        X = kernel_tools.add_pseudo_species(X, min)
 
     """
     Setting B=5 performs vanilla HSIC lasso.
@@ -126,7 +129,7 @@ if __name__ == "__main__":
                                   case["outcome"],
                                   case["timepoint"],
                                   kernel_methods,
-                                  add_constant=True)
+                                  add_pseudo_species=True)
         print(features)
 
     # ## Which OTUs intersect in predicting 3 year asthma between the 3month and 1year samples?
