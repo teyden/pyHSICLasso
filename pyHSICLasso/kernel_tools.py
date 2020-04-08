@@ -92,8 +92,8 @@ def add_pseudo_species(X):
     :param X: assumes samples are rows and features are columns
     :return: The augmented matrix.
     """
-    min = np.min(X[X != 0])
-    X = np.append(X, min)
+    min_val = np.min(X[X != 0])
+    X = np.append(X, min_val)
     return X
 
 def zero_adjust_pairwise_distance(X, distance="braycurtis"):
