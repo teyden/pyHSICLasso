@@ -67,6 +67,27 @@ def kernel_custom(X, kernel, zero_adjust=True):
     K = convert_D_to_K(D)
     return K
 
+def zero_adjust_pairwise_distance(X, distance="braycurtis"):
+    """
+    Cite: https://github.com/phytomosaic/ecole/blob/master/R/bray0.R
+
+    Tricky fact: if adding a pseudo species with a min count for a "block" vs. the entire X matrix,
+    then it may result in weird results....
+    I'd likely only use this when working with the whole X matrix.
+
+    :param X: an OTU table with samples as rows and OTUs as columns
+    :return:
+    """
+    X = add_pseudo_species(X)
+    if distance in ["braycurtis", "jaccard"]:
+        # Temporarily match the Jaccard computation with the vegan::vegdist implementation in R.
+        D = pairwise_distances(X, metric="braycurtis")
+        if distance == "jaccard":
+            D = (2 * D) / (1 + D)
+    else:
+        raise ValueError("Only Jaccard and Bray-Curtis distances are supported.")
+    return D
+
 def convert_D_to_K(D):
     """
     Applies positive-semidefinite correction to project the distance matrix to the kernel space.
@@ -102,7 +123,7 @@ def add_pseudo_species(X, min_val=None):
             raise ValueError("This OTU matrix contains all zeros.")
 
     if X.shape[1] == 1:
-        X = X.append(min_val)
+        X = np.append(X, min_val)
     else:
         n, d = X.shape
         scaffold = np.zeros((n, d + 1)) + min_val
@@ -110,27 +131,6 @@ def add_pseudo_species(X, min_val=None):
         X = scaffold
     return X
 
-def zero_adjust_pairwise_distance(X, distance="braycurtis"):
-    """
-    Cite: https://github.com/phytomosaic/ecole/blob/master/R/bray0.R
-
-    Tricky fact: if adding a pseudo species with a min count for a "block" vs. the entire X matrix,
-    then it may result in weird results....
-    I'd likely only use this when working with the whole X matrix.
-
-    :param X: an OTU table with samples as rows and OTUs as columns
-    :return:
-    """
-    X = add_pseudo_species(X)
-    if distance == "jaccard":
-        # Temporarily match the Jaccard computation with the vegan::vegdist implementation in R.
-        D = pairwise_distances(X, metric="braycurtis")
-        D = (2 * D) / (1 + D)
-    elif distance == "braycurtis":
-        D = pairwise_distances(X, metric=distance)
-    else:
-        raise ValueError("Only Jaccard and Bray-Curtis distances are supported.")
-    return D
 
 
 # data = [[23, 64, 14, 0, 0, 3, 1],
