@@ -129,7 +129,7 @@ def add_pseudo_species(X, min_val=None):
 
     # This is an nx1 array that looks like: np.array([[1],[2],[3]]). 
     if X.shape[1] == 1: 
-        X = np.append(X, np.array([[min_val]]), axis=0) ``
+        X = np.append(X, np.array([[min_val]]), axis=0)
     else:
         n, d = X.shape
         scaffold = np.zeros((n, d + 1)) + min_val
