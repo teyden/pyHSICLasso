@@ -392,6 +392,8 @@ if __name__ == "__main__":
     if len(args) > 3:
         method3 = args[3]
 
+    method1 = "--hsiclasso"
+    
     methods = [method1, method2, method3]
 
     RESULT = {}

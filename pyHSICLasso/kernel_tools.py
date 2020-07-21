@@ -122,14 +122,18 @@ def add_pseudo_species(X, min_val=None):
         if min_val == 0:
             raise ValueError("This OTU matrix contains all zeros.")
 
-    if X.shape[1] == 1:
-        X = np.append(X, min_val)
+    # This is an nx1 array that looks like: np.array([[1],[2],[3]]). 
+    if X.shape[1] == 1: 
+        X = np.append(X, np.array([min_val]), axis=0) 
     else:
         n, d = X.shape
         scaffold = np.zeros((n, d + 1)) + min_val
         scaffold[:, :-1] = X
         X = scaffold
     return X
+
+
+
 
 
 
