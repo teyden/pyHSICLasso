@@ -62,7 +62,12 @@ def kernel_custom(X, kernel, zero_adjust=False):
         providing little information about the true 'dissimilarity' of no-share sample unit pairs.
         This will mean that for those with no shared taxa, this pseudo column will be the single
         shared taxa between the sample. Instead of saturating at 1, it will saturate at a high
-        value close to 1. How is this better?
+        value close to 1. BC actually produces NaN if two samples have no shared units. 
+        Hence, it is possible to have dissimilarity=1 with shared units between samples.
+        I thought that dissimilarity could only be 1 if there are no shared units, but this is
+        potentially incorrect.  
+        Consider adding this pseudo column to the original X matrix instead, prior to modelling.
+        If this is done here for HSIC, then the same should be done for RFECV. 
 
         Tricky fact: if adding a pseudo species with a min count for a "block" vs. the entire X matrix,
         then it may result in weird results....
@@ -81,6 +86,9 @@ def kernel_custom(X, kernel, zero_adjust=False):
         D = pairwise_distances(X, metric=kernel)
 
     print(D)
+    D[np.isnan(D)] = 1
+    print(D)
+    
     K = convert_D_to_K(D)
     
     return K
