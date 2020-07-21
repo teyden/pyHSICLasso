@@ -85,12 +85,12 @@ def kernel_custom(X, kernel, zero_adjust=False):
     else:
         D = pairwise_distances(X, metric=kernel)
 
-    print(D)
+    # For samples with no shared taxa, NaN would be produced. Replace it with 1.
+    # Will saturate at 1. Could have side effects, but this must be matched with the
+    # RFECV implementation. 
     D[np.isnan(D)] = 1
-    print(D)
-    
     K = convert_D_to_K(D)
-    
+
     return K
 
 def convert_D_to_K(D):
@@ -129,7 +129,7 @@ def add_pseudo_species(X, min_val=None):
 
     # This is an nx1 array that looks like: np.array([[1],[2],[3]]). 
     if X.shape[1] == 1: 
-        X = np.append(X, np.array([[min_val]]), axis=0) 
+        X = np.append(X, np.array([[min_val]]), axis=0) ``
     else:
         n, d = X.shape
         scaffold = np.zeros((n, d + 1)) + min_val
