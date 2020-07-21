@@ -53,10 +53,16 @@ def kernel_gaussian(X_in_1, X_in_2, sigma):
 
 #####################################################################################
 
-def kernel_custom(X, kernel, zero_adjust=True):
+def kernel_custom(X, kernel, zero_adjust=False):
     if zero_adjust:
         """
         Cite: https://github.com/phytomosaic/ecole/blob/master/R/bray0.R
+        The idea of adding a pseudo species is to account for cases where sample units do not have
+        any shared species at all. This will cause for Bray-Curtis dissimilarity to saturate at 1,
+        providing little information about the true 'dissimilarity' of no-share sample unit pairs.
+        This will mean that for those with no shared taxa, this pseudo column will be the single
+        shared taxa between the sample. Instead of saturating at 1, it will saturate at a high
+        value close to 1. How is this better?
 
         Tricky fact: if adding a pseudo species with a min count for a "block" vs. the entire X matrix,
         then it may result in weird results....
@@ -74,6 +80,7 @@ def kernel_custom(X, kernel, zero_adjust=True):
     else:
         D = pairwise_distances(X, metric=kernel)
 
+    print(D)
     K = convert_D_to_K(D)
     
     return K
@@ -114,7 +121,7 @@ def add_pseudo_species(X, min_val=None):
 
     # This is an nx1 array that looks like: np.array([[1],[2],[3]]). 
     if X.shape[1] == 1: 
-        X = np.append(X, np.array([min_val]), axis=0) 
+        X = np.append(X, np.array([[min_val]]), axis=0) 
     else:
         n, d = X.shape
         scaffold = np.zeros((n, d + 1)) + min_val
