@@ -113,5 +113,4 @@ def compute_kernel(x, kernel, B = 0, M = 1, discarded = 0, zero_adjust=True):
     return K
 
 def parallel_compute_kernel(x, kernel, feature_idx, B, M, n, discarded, zero_adjust):
-
     return (feature_idx, compute_kernel(x, kernel, B, M, discarded, zero_adjust))

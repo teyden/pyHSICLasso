@@ -55,38 +55,28 @@ def kernel_gaussian(X_in_1, X_in_2, sigma):
 
 def kernel_custom(X, kernel, zero_adjust=True):
     if zero_adjust:
-        # This zero-adjustment adds a pseudo species
-        D = zero_adjust_pairwise_distance(X, distance=kernel)
-    else:
-        if kernel == "jaccard":
-            # Temporarily match the Jaccard computation with the vegan::vegdist implementation in R.
-            D = pairwise_distances(X, metric="braycurtis")
-            D = (2 * D) / (1 + D)
-        else:
-            D = pairwise_distances(X, metric=kernel)
-    K = convert_D_to_K(D)
-    return K
+        """
+        Cite: https://github.com/phytomosaic/ecole/blob/master/R/bray0.R
 
-def zero_adjust_pairwise_distance(X, distance="braycurtis"):
-    """
-    Cite: https://github.com/phytomosaic/ecole/blob/master/R/bray0.R
+        Tricky fact: if adding a pseudo species with a min count for a "block" vs. the entire X matrix,
+        then it may result in weird results....
+        I'd likely only use this when working with the whole X matrix.
 
-    Tricky fact: if adding a pseudo species with a min count for a "block" vs. the entire X matrix,
-    then it may result in weird results....
-    I'd likely only use this when working with the whole X matrix.
+        :param X: an OTU table with samples as rows and OTUs as columns
+        :return:
+        """
+        X = add_pseudo_species(X)
 
-    :param X: an OTU table with samples as rows and OTUs as columns
-    :return:
-    """
-    X = add_pseudo_species(X)
-    if distance in ["braycurtis", "jaccard"]:
+    if kernel == "jaccard":
         # Temporarily match the Jaccard computation with the vegan::vegdist implementation in R.
         D = pairwise_distances(X, metric="braycurtis")
-        if distance == "jaccard":
-            D = (2 * D) / (1 + D)
+        D = (2 * D) / (1 + D)
     else:
-        raise ValueError("Only Jaccard and Bray-Curtis distances are supported.")
-    return D
+        D = pairwise_distances(X, metric=kernel)
+
+    K = convert_D_to_K(D)
+    
+    return K
 
 def convert_D_to_K(D):
     """

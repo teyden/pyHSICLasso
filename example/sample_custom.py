@@ -393,7 +393,7 @@ if __name__ == "__main__":
         method3 = args[3]
 
     method1 = "--hsiclasso"
-    
+
     methods = [method1, method2, method3]
 
     RESULT = {}
@@ -412,22 +412,3 @@ if __name__ == "__main__":
     f = open("/Users/teyden/Desktop/feature_selection_results.pkl", "wb")
     pickle.dump(RESULT, f)
     f.close()
-
-    # print("\n")
-    # print("*"*100)
-    # print("\n")
-    # overlapping = {}
-    # i = 0
-    # for method, result in RESULT.items():
-    #     outcomes = result.keys()
-    #     timepoints = result[outcomes[0]].keys()
-    #     for outcome in outcomes:
-    #         overlapping[outcome] = {}
-    #         for timepoint in timepoints:
-    #             if i == 0:
-    #                 intersection = set(result[outcome][timepoint])
-    #             else:
-    #                 intersection = overlapping[outcome][timepoint] & set(result[outcome][timepoint])
-    #             overlapping[outcome][timepoint] = intersection
-    #
-    # pprint.pprint(overlapping)
