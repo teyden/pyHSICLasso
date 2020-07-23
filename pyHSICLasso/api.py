@@ -117,7 +117,7 @@ of blocks {} will be approximated to {}.".format(B, n, numblocks, int(numblocks)
             x_kernel, y_kernel, ' and {} kernel for the covariates'.format(covars_kernel) if covars.size else ''))
 
         X,Xty,Ky = hsic_lasso(self.X_in, self.Y_in, y_kernel, x_kernel, zero_adjust=zero_adjust,
-                              n_jobs=n_jobs, discarded=discarded, B=B, M=M)
+                              n_jobs=n_jobs, discarded=discarded, B=B, M=M, featname=self.featname)
 
         # np.concatenate(self.X, axis = 0) * np.sqrt(1/(numblocks * M))
         self.X = X * np.sqrt(1 / (numblocks * M))

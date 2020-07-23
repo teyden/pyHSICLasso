@@ -22,7 +22,7 @@ class CustomKernel(enum.Enum):
     UnweightedUniFrac = "unweighted_unifrac"
     WeightedUniFrac = "weighted_unifrac"
 
-def hsic_lasso(X, Y, y_kernel, x_kernel='Gaussian', zero_adjust=True, n_jobs=-1, discarded=0, B=0, M=1):
+def hsic_lasso(X, Y, y_kernel, x_kernel='Gaussian', zero_adjust=True, n_jobs=-1, discarded=0, B=0, M=1, featname=None):
     """
     Input:
         X      input_data
@@ -44,7 +44,7 @@ def hsic_lasso(X, Y, y_kernel, x_kernel='Gaussian', zero_adjust=True, n_jobs=-1,
     # Preparing design matrix for HSIC Lars
     # TODO - what is the output like?
     result = Parallel(n_jobs=n_jobs)([delayed(parallel_compute_kernel)(
-        np.reshape(X[k,:],(1,n)), x_kernel, k, B, M, n, discarded, zero_adjust) for k in range(d)])
+        np.reshape(X[k,:],(1,n)), x_kernel, k, B, M, n, discarded, zero_adjust, featname) for k in range(d)])
 
     # non-parallel version for debugging purposes
     # result = []
@@ -63,14 +63,14 @@ def hsic_lasso(X, Y, y_kernel, x_kernel='Gaussian', zero_adjust=True, n_jobs=-1,
 
     return K, KtL, L
 
-def _compute_custom_kernel(x, kernel, zero_adjust=True):
+def _compute_custom_kernel(x, kernel, zero_adjust=True, featname=None):
     try:    
         _kernel = CustomKernel[kernel].value
     except:
         print("Kernel metric provided doesn't match valid options.")
-    return kernel_custom(x, _kernel, zero_adjust)
+    return kernel_custom(x, _kernel, zero_adjust, featname)
 
-def compute_kernel(x, kernel, B = 0, M = 1, discarded = 0, zero_adjust=True):
+def compute_kernel(x, kernel, B = 0, M = 1, discarded = 0, zero_adjust=True, featname=None):
 
     d,n = x.shape
 
@@ -98,7 +98,7 @@ def compute_kernel(x, kernel, B = 0, M = 1, discarded = 0, zero_adjust=True):
             elif kernel == 'Delta':
                 k = kernel_delta_norm(block, block)
             elif kernel in ["Jaccard", "BrayCurtis"]:  # TODO test this; how is this k diff from the above?
-                k = _compute_custom_kernel(block.T, kernel, zero_adjust)
+                k = _compute_custom_kernel(block.T, kernel, zero_adjust, featname)
             else:
                 raise Exception("Invalid kernel selection.")
 

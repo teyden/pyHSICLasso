@@ -8,6 +8,9 @@ from future import standard_library
 
 from scipy.spatial.distance import pdist, squareform
 from sklearn.metrics import pairwise_distances
+
+from skbio.diversity.beta import unweighted_unifrac
+
 import numpy as np
 
 standard_library.install_aliases()
@@ -53,7 +56,7 @@ def kernel_gaussian(X_in_1, X_in_2, sigma):
 
 #####################################################################################
 
-def kernel_custom(X, kernel, zero_adjust=False):
+def kernel_custom(X, kernel, zero_adjust=False, featname=None):
     if zero_adjust:
         """
         Cite: https://github.com/phytomosaic/ecole/blob/master/R/bray0.R
@@ -82,7 +85,12 @@ def kernel_custom(X, kernel, zero_adjust=False):
         # Temporarily match the Jaccard computation with the vegan::vegdist implementation in R.
         D = pairwise_distances(X, metric="braycurtis")
         D = (2 * D) / (1 + D)
+    if kernel == "uw_unifrac":
+        D = pw_dist_unifrac(X, featname)
     else:
+        # TODO - unifrac can be implemented using beta_diversity.unweighted_unifrac
+        # it creates a distance matrix
+        # need to construct a tree: http://scikit-bio.org/docs/0.4.2/generated/generated/skbio.diversity.beta.unweighted_unifrac.html
         D = pairwise_distances(X, metric=kernel)
 
     # For samples with no shared taxa, NaN would be produced. Replace it with 1.
@@ -93,6 +101,52 @@ def kernel_custom(X, kernel, zero_adjust=False):
 
     return K
 
+from skbio.diversity import beta_diversity
+from skbio.tree import TreeNode
+from io import StringIO
+
+def pw_dist_unifrac(X, featname):
+    fp_microbiome_data = "/Users/teyden/Projects/asthma/data-objects/cluster-data/data-for-testing/data_ID__18__3m-ds5y_microbiome__train.csv"
+    fp_taxa_mapping = "/Users/teyden/Projects/asthma/data/child-study-data-jan-2019/processed/microbiome-data/taxonomy_table.csv"
+    fp_tree = "/Users/teyden/Projects/asthma/data/child-study-data-jan-2019/their-files/tree.nwk"
+    
+    with open(fp_tree, 'r') as file:
+        newick_tree = file.read()
+    tree = TreeNode.read(StringIO(newick_tree))
+    tree = tree.root_at("root")
+
+    INTERNALID_TO_OTUID_MAPPING = {}
+    OTUID_TO_INTERNALID_MAPPING = {}
+    count = 0
+    for idx, node in tree.to_array()["id_index"].items():
+        if node.is_tip():
+            count += 1
+            INTERNALID_TO_OTUID_MAPPING[node.name] = ""
+        
+    for row in taxa_mapping.iterrows():
+        internal_id = row[1].internal_id
+        otu_id = row[1].otu_identifier
+        if internal_id in ids_dict:
+            INTERNALID_TO_OTUID_MAPPING[internal_id] = otu_id
+        else:
+            print("This OTU is not in the tree: ", internal_id)
+            
+    for internal_id, otu_id in INTERNALID_TO_OTUID_MAPPING.items():
+        OTUID_TO_INTERNALID_MAPPING[otu_id] = internal_id
+    
+    internal_ids = get_internal_ids(featname, mapping=OTUID_TO_INTERNALID_MAPPING)
+    uw_u_D = beta_diversity("unweighted_unifrac", counts=X, tree=tree, otu_ids=internal_ids)
+    return uw_u_D.data
+
+def get_internal_ids(otu_ids, mapping):
+    internal_ids = []
+    for otu_id in otu_ids:
+        if otu_id in mapping:
+            internal_ids.append(mapping.get(otu_id))
+        else:
+            raise Exception("OTU ID provided has no internal ID mapping")
+    return internal_ids
+    
 def convert_D_to_K(D):
     """
     Applies positive-semidefinite correction to project the distance matrix to the kernel space.
