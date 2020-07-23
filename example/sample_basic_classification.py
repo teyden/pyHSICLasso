@@ -31,7 +31,7 @@ def main():
     hsic_lasso.input(X, Y, featname=OTU_IDs)
     hsic_lasso.classification(d,
                               y_kernel="Delta",
-                              x_kernel="Jaccard",
+                              x_kernel="UnweightedUniFrac",
                               covars_kernel="Gaussian",
                               zero_adjust=False)
     hsic_lasso.dump()
