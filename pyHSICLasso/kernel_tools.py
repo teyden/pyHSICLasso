@@ -85,7 +85,7 @@ def kernel_custom(X, kernel, zero_adjust=False, featname=None):
         # Temporarily match the Jaccard computation with the vegan::vegdist implementation in R.
         D = pairwise_distances(X, metric="braycurtis")
         D = (2 * D) / (1 + D)
-    if kernel == "uw_unifrac":
+    if kernel == "unweighted_unifrac":
         D = pw_dist_unifrac(X, featname)
     else:
         # TODO - unifrac can be implemented using beta_diversity.unweighted_unifrac

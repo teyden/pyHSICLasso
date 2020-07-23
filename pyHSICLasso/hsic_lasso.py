@@ -97,7 +97,7 @@ def compute_kernel(x, kernel, B = 0, M = 1, discarded = 0, zero_adjust=True, fea
                 k = kernel_gaussian(block, block, np.sqrt(d))
             elif kernel == 'Delta':
                 k = kernel_delta_norm(block, block)
-            elif kernel in ["Jaccard", "BrayCurtis"]:  # TODO test this; how is this k diff from the above?
+            elif kernel in ["Jaccard", "BrayCurtis", "UnweightedUniFrac"]:  # TODO test this; how is this k diff from the above?
                 k = _compute_custom_kernel(block.T, kernel, zero_adjust, featname)
             else:
                 raise Exception("Invalid kernel selection.")
