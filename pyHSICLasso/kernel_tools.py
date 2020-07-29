@@ -110,6 +110,8 @@ def pw_dist_unifrac(X, featname):
     fp_taxa_mapping = "/Users/teyden/Projects/asthma/data/child-study-data-jan-2019/processed/microbiome-data/taxonomy_table.csv"
     fp_tree = "/Users/teyden/Projects/asthma/data/child-study-data-jan-2019/their-files/tree.nwk"
     
+    taxa_mapping = pd.read_csv(fp_taxa_mapping)
+    
     with open(fp_tree, 'r') as file:
         newick_tree = file.read()
     tree = TreeNode.read(StringIO(newick_tree))
