@@ -121,6 +121,7 @@ def pw_dist_unifrac(X, featname):
     INTERNALID_TO_OTUID_MAPPING = {}
     OTUID_TO_INTERNALID_MAPPING = {}
     count = 0
+    # I think node.name is the internal id (not OTU_)
     for idx, node in tree.to_array()["id_index"].items():
         if node.is_tip():
             count += 1
@@ -129,7 +130,7 @@ def pw_dist_unifrac(X, featname):
     for row in taxa_mapping.iterrows():
         internal_id = row[1].internal_id
         otu_id = row[1].otu_identifier
-        if internal_id in ids_dict:
+        if internal_id in INTERNALID_TO_OTUID_MAPPING:
             INTERNALID_TO_OTUID_MAPPING[internal_id] = otu_id
         else:
             print("This OTU is not in the tree: ", internal_id)
