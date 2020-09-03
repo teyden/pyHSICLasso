@@ -12,6 +12,7 @@ from sklearn.metrics import pairwise_distances
 from skbio.diversity.beta import unweighted_unifrac
 
 import numpy as np
+import pandas as pd
 
 standard_library.install_aliases()
 
