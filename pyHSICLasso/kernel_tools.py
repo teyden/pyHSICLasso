@@ -10,6 +10,10 @@ from scipy.spatial.distance import pdist, squareform
 from sklearn.metrics import pairwise_distances
 
 from skbio.diversity.beta import unweighted_unifrac
+from skbio.diversity import beta_diversity
+from skbio.tree import TreeNode
+
+from io import StringIO
 
 import numpy as np
 import pandas as pd
@@ -57,7 +61,8 @@ def kernel_gaussian(X_in_1, X_in_2, sigma):
 
 #####################################################################################
 
-def kernel_custom(X, kernel, zero_adjust=False, featname=None):
+
+def kernel_custom(X, kernel, zero_adjust=False, featname=None, tree=None, otu_to_internal_map=None):
     if zero_adjust:
         """
         Cite: https://github.com/phytomosaic/ecole/blob/master/R/bray0.R
@@ -87,7 +92,7 @@ def kernel_custom(X, kernel, zero_adjust=False, featname=None):
         D = pairwise_distances(X, metric="braycurtis")
         D = (2 * D) / (1 + D)
     if kernel == "unweighted_unifrac":
-        D = pw_dist_unifrac(X, featname)
+        D = pw_dist_unifrac(X, featname, tree, otu_to_internal_map)
     else:
         # TODO - unifrac can be implemented using beta_diversity.unweighted_unifrac
         # it creates a distance matrix
@@ -102,17 +107,12 @@ def kernel_custom(X, kernel, zero_adjust=False, featname=None):
 
     return K
 
-from skbio.diversity import beta_diversity
-from skbio.tree import TreeNode
-from io import StringIO
-
-def pw_dist_unifrac(X, featname):
-    fp_microbiome_data = "/Users/teyden/Projects/asthma/data-objects/cluster-data/data-for-testing/data_ID__18__3m-ds5y_microbiome__train.csv"
+def get_phylogenetic_tree():
     fp_taxa_mapping = "/Users/teyden/Projects/asthma/data/child-study-data-jan-2019/processed/microbiome-data/taxonomy_table.csv"
     fp_tree = "/Users/teyden/Projects/asthma/data/child-study-data-jan-2019/their-files/tree.nwk"
-    
+
     taxa_mapping = pd.read_csv(fp_taxa_mapping)
-    
+
     with open(fp_tree, 'r') as file:
         newick_tree = file.read()
     tree = TreeNode.read(StringIO(newick_tree))
@@ -126,7 +126,7 @@ def pw_dist_unifrac(X, featname):
         if node.is_tip():
             count += 1
             INTERNALID_TO_OTUID_MAPPING[node.name] = ""
-        
+
     for row in taxa_mapping.iterrows():
         internal_id = row[1].internal_id
         otu_id = row[1].otu_identifier
@@ -134,12 +134,23 @@ def pw_dist_unifrac(X, featname):
             INTERNALID_TO_OTUID_MAPPING[internal_id] = otu_id
         else:
             print("This OTU is not in the tree: ", internal_id)
-            
+
     for internal_id, otu_id in INTERNALID_TO_OTUID_MAPPING.items():
         OTUID_TO_INTERNALID_MAPPING[otu_id] = internal_id
-    
-    internal_ids = get_internal_ids(featname, mapping=OTUID_TO_INTERNALID_MAPPING)
-    uw_u_D = beta_diversity("unweighted_unifrac", counts=X, tree=tree, otu_ids=internal_ids)
+
+    return (tree, INTERNALID_TO_OTUID_MAPPING, OTUID_TO_INTERNALID_MAPPING)
+
+def pw_dist_unifrac(X, featname, tree, otu_to_internal_map):    
+    internal_ids = get_internal_ids(featname, mapping=otu_to_internal_map)
+
+    sheared_tree = tree.shear(names=internal_ids)
+
+    X.index = internal_ids
+    X_array = X.T.to_numpy()
+
+    uw_u_D = beta_diversity("unweighted_unifrac", counts=X_array,
+        tree=sheared_tree, otu_ids=internal_ids)
+
     return uw_u_D.data
 
 def get_internal_ids(otu_ids, mapping):
@@ -148,7 +159,7 @@ def get_internal_ids(otu_ids, mapping):
         if otu_id in mapping:
             internal_ids.append(mapping.get(otu_id))
         else:
-            raise Exception("OTU ID provided has no internal ID mapping")
+            raise Exception(f'OTU ID {otu_id} provided has no internal ID mapping')
     return internal_ids
     
 def convert_D_to_K(D):
@@ -196,35 +207,15 @@ def add_pseudo_species(X, min_val=None):
     return X
 
 
+if __name__ == "__main__":
+    fp_microbiome_data = "/Users/teyden/Projects/asthma/data-objects/simulated-data/sim_data_ID_7__abund-vs-numcorrect/sim_data_ID_7_1/splitted_data_ID__1/orig_data.csv"
 
+    mb_df = pd.read_csv(fp_microbiome_data, index_col="SampleID")
+    y = mb_df["binary_outcome"]
 
+    mb_df = mb_df.drop(columns=["binary_outcome", "Unnamed: 0", "uid"])
+    mb_df = mb_df.T
 
-
-# data = [[23, 64, 14, 0, 0, 3, 1],
-#          [0, 3, 35, 42, 0, 12, 1],
-#          [0, 5, 5, 0, 40, 40, 0],
-#          [44, 35, 9, 0, 1, 0, 0],
-#          [0, 2, 8, 0, 35, 45, 1],
-#          [0, 0, 25, 35, 0, 19, 0]]
-#
-# # Test whether kernel computation is consistent between this implementation and using a library
-# from scipy.spatial.distance import pdist, squareform
-#
-# x = np.arange(5).reshape((1, 5)).T
-#
-# d = x.T.shape[0]
-# s = np.sqrt(d)
-#
-# pairwise_dists_gaussian = squareform(pdist(x, 'sqeuclidean'))
-# K = np.exp(-pairwise_dists_gaussian / (2 * np.power(s, 2)))
-# _K = kernel_gaussian(x.T, x.T, s)
-#
-# # are K and _k equivalent? yes.
-# # Now, do the same with Jaccard, but have to figure out how to convert it to a kernel.
-# # Does it need to be corrected somehow? Is there an assumption that it comes from a reproducing kernel hilbert space?
-#
-#
-#pairwise_dists_jaccard = squareform(pdist(x, 'jaccard'))
-# # pairwise_dists_jaccard = skbio.diversity.beta_diversity(metric=kernel, counts=x)
-#
-# pairwise_dists_braycurtis = squareform(pdist(x, 'braycurtis'))
+    tree, INTERNALID_TO_OTUID_MAPPING, OTUID_TO_INTERNALID_MAPPING = get_phylogenetic_tree()
+    d = pw_dist_unifrac(mb_df, featname=mb_df.index, tree=tree, otu_to_internal_map=OTUID_TO_INTERNALID_MAPPING)
+    print(d)

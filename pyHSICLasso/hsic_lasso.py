@@ -12,7 +12,7 @@ import enum
 import numpy as np
 from joblib import Parallel, delayed
 
-from .kernel_tools import kernel_delta_norm, kernel_gaussian, kernel_custom
+from .kernel_tools import kernel_delta_norm, kernel_gaussian, kernel_custom, get_phylogenetic_tree
 
 standard_library.install_aliases()
 
@@ -63,12 +63,13 @@ def hsic_lasso(X, Y, y_kernel, x_kernel='Gaussian', zero_adjust=True, n_jobs=-1,
 
     return K, KtL, L
 
-def _compute_custom_kernel(x, kernel, zero_adjust=True, featname=None):
+
+def _compute_custom_kernel(x, kernel, zero_adjust=True, featname=None, tree=None, otu_to_internal_map=None):
     try:    
         _kernel = CustomKernel[kernel].value
     except:
         print("Kernel metric provided doesn't match valid options.")
-    return kernel_custom(x, _kernel, zero_adjust, featname)
+    return kernel_custom(x, _kernel, zero_adjust, featname, tree, otu_to_internal_map)
 
 def compute_kernel(x, kernel, B = 0, M = 1, discarded = 0, zero_adjust=True, featname=None):
 
@@ -81,6 +82,9 @@ def compute_kernel(x, kernel, B = 0, M = 1, discarded = 0, zero_adjust=True, fea
     if kernel == "Gaussian":
         x = (x / (x.std() + 10e-20)).astype(np.float32)
 
+    if kernel == "UnweightedUniFrac" or kernel == "WeightedUniFrac":
+        tree, internal_to_otu_map, otu_to_internal_map = get_phylogenetic_tree()
+
     st = 0
     ed = B ** 2
     index = np.arange(n)
@@ -91,14 +95,18 @@ def compute_kernel(x, kernel, B = 0, M = 1, discarded = 0, zero_adjust=True, fea
         # I believe the distance between i and j will always be B. This defines the block size to be computed.
         for i in range(0, n - discarded, B):
             j = min(n, i + B)
+            
+            # All rows (the outcome variables), just columns i to j (the samples)
 
-            block = x[:,index[i:j]] # All rows (the outcome variables), just columns i to j (the samples)
+            # Grabs random columns between i and j of index, the random container of indices between 0:n
+            block = x[:,index[i:j]]
             if kernel == 'Gaussian':
                 k = kernel_gaussian(block, block, np.sqrt(d))
             elif kernel == 'Delta':
                 k = kernel_delta_norm(block, block)
             elif kernel in ["Jaccard", "BrayCurtis", "UnweightedUniFrac"]:  # TODO test this; how is this k diff from the above?
-                k = _compute_custom_kernel(block.T, kernel, zero_adjust, featname)
+                k = _compute_custom_kernel(
+                    block.T, kernel, zero_adjust, featname, tree, otu_to_internal_map)
             else:
                 raise Exception("Invalid kernel selection.")
 

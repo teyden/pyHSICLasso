@@ -53,7 +53,7 @@ def input_txt_file(file_name, output_list, sep):
 
 def input_matlab_file(file_name):
     data = spio.loadmat(file_name)
-
+    
     if "X" in data.keys() and "Y" in data.keys():
         X_in = data["X"]
         Y_in = data["Y"]
