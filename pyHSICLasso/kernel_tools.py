@@ -60,31 +60,30 @@ def kernel_gaussian(X_in_1, X_in_2, sigma):
     return K
 
 #####################################################################################
+"""
+    Cite: https://github.com/phytomosaic/ecole/blob/master/R/bray0.R
+    The idea of adding a pseudo species is to account for cases where sample units do not have
+    any shared species at all. This will cause for Bray-Curtis dissimilarity to saturate at 1,
+    providing little information about the true 'dissimilarity' of no-share sample unit pairs.
+    This will mean that for those with no shared taxa, this pseudo column will be the single
+    shared taxa between the sample. Instead of saturating at 1, it will saturate at a high
+    value close to 1. BC actually produces NaN if two samples have no shared units. 
+    Hence, it is possible to have dissimilarity=1 with shared units between samples.
+    I thought that dissimilarity could only be 1 if there are no shared units, but this is
+    potentially incorrect.  
+    Consider adding this pseudo column to the original X matrix instead, prior to modelling.
+    If this is done here for HSIC, then the same should be done for RFECV. 
 
+    Tricky fact: if adding a pseudo species with a min count for a "block" vs. the entire X matrix,
+    then it may result in weird results....
+    I'd likely only use this when working with the whole X matrix.
+
+    :param X: an OTU table with samples as rows and OTUs as columns
+    :return:
+    """
 
 def kernel_custom(X, kernel, zero_adjust=False, featname=None, feature_idx=None, tree=None, otu_to_internal_map=None):
     if zero_adjust:
-        """
-        Cite: https://github.com/phytomosaic/ecole/blob/master/R/bray0.R
-        The idea of adding a pseudo species is to account for cases where sample units do not have
-        any shared species at all. This will cause for Bray-Curtis dissimilarity to saturate at 1,
-        providing little information about the true 'dissimilarity' of no-share sample unit pairs.
-        This will mean that for those with no shared taxa, this pseudo column will be the single
-        shared taxa between the sample. Instead of saturating at 1, it will saturate at a high
-        value close to 1. BC actually produces NaN if two samples have no shared units. 
-        Hence, it is possible to have dissimilarity=1 with shared units between samples.
-        I thought that dissimilarity could only be 1 if there are no shared units, but this is
-        potentially incorrect.  
-        Consider adding this pseudo column to the original X matrix instead, prior to modelling.
-        If this is done here for HSIC, then the same should be done for RFECV. 
-
-        Tricky fact: if adding a pseudo species with a min count for a "block" vs. the entire X matrix,
-        then it may result in weird results....
-        I'd likely only use this when working with the whole X matrix.
-
-        :param X: an OTU table with samples as rows and OTUs as columns
-        :return:
-        """
         X = add_pseudo_species(X)
 
     if kernel == "jaccard":
@@ -94,14 +93,10 @@ def kernel_custom(X, kernel, zero_adjust=False, featname=None, feature_idx=None,
     if kernel == "unweighted_unifrac":
         D = pw_dist_unifrac(X, feature_idx, featname, tree, otu_to_internal_map)
     else:
-        # TODO - unifrac can be implemented using beta_diversity.unweighted_unifrac
-        # it creates a distance matrix
-        # need to construct a tree: http://scikit-bio.org/docs/0.4.2/generated/generated/skbio.diversity.beta.unweighted_unifrac.html
         D = pairwise_distances(X, metric=kernel)
 
     # For samples with no shared taxa, NaN would be produced. Replace it with 1.
-    # Will saturate at 1. Could have side effects, but this must be matched with the
-    # RFECV implementation. 
+    # Will saturate at 1.
     D[np.isnan(D)] = 1
     K = convert_D_to_K(D)
 
@@ -143,14 +138,14 @@ def get_phylogenetic_tree():
 def pw_dist_unifrac(x, feature_idx, featname, tree, otu_to_internal_map):
     feature = featname[feature_idx]
 
-    internal_ids = get_internal_ids(featname, mapping=otu_to_internal_map)
+    all_internal_ids = get_internal_ids(featname, mapping=otu_to_internal_map)
+    internal_id = get_internal_ids([feature], mapping=otu_to_internal_map)
 
-    sheared_tree = tree.shear(names=internal_ids)
-    # X.index = internal_ids
-    # X_array = X.T.to_numpy()
+    # Shear it to speed up search time
+    sheared_tree = tree.shear(names=all_internal_ids)
 
     uw_u_D = beta_diversity("unweighted_unifrac", counts=x,
-                            tree=sheared_tree, otu_ids=[feature])
+                            tree=sheared_tree, otu_ids=[internal_id])
 
     return uw_u_D.data
 
