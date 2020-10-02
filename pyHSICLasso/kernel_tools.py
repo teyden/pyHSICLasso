@@ -91,7 +91,7 @@ def kernel_custom(X, kernel, zero_adjust=False, featname=None, feature_idx=None,
         D = pairwise_distances(X, metric="braycurtis")
         D = (2 * D) / (1 + D)
     if kernel == "unweighted_unifrac":
-        D = pw_dist_unifrac(X, feature_idx, featname, tree, otu_to_internal_map)
+        D = pw_dist_unifrac(X, feature_idx, featname, tree, otu_to_internal_map, kernel)
     else:
         D = pairwise_distances(X, metric=kernel)
 
@@ -102,7 +102,7 @@ def kernel_custom(X, kernel, zero_adjust=False, featname=None, feature_idx=None,
 
     return K
 
-def get_phylogenetic_tree():
+def get_phylogenetic_tree(features):
     fp_taxa_mapping = "/Users/teyden/Projects/asthma/data/child-study-data-jan-2019/processed/microbiome-data/taxonomy_table.csv"
     fp_tree = "/Users/teyden/Projects/asthma/data/child-study-data-jan-2019/their-files/tree.nwk"
 
@@ -133,19 +133,18 @@ def get_phylogenetic_tree():
     for internal_id, otu_id in INTERNALID_TO_OTUID_MAPPING.items():
         OTUID_TO_INTERNALID_MAPPING[otu_id] = internal_id
 
-    return (tree, INTERNALID_TO_OTUID_MAPPING, OTUID_TO_INTERNALID_MAPPING)
-
-def pw_dist_unifrac(x, feature_idx, featname, tree, otu_to_internal_map):
-    feature = featname[feature_idx]
-
-    all_internal_ids = get_internal_ids(featname, mapping=otu_to_internal_map)
-    internal_id = get_internal_ids([feature], mapping=otu_to_internal_map)
-
     # Shear it to speed up search time
-    sheared_tree = tree.shear(names=all_internal_ids)
+    internal_ids = get_internal_ids(
+        features, mapping=OTUID_TO_INTERNALID_MAPPING)
+    sheared_tree = tree.shear(names=internal_ids)
 
-    uw_u_D = beta_diversity("unweighted_unifrac", counts=x,
-                            tree=sheared_tree, otu_ids=internal_id)
+    return (sheared_tree, internal_ids, INTERNALID_TO_OTUID_MAPPING, OTUID_TO_INTERNALID_MAPPING)
+
+def pw_dist_unifrac(x, feature_idx, featname, tree, otu_to_internal_map, kernel):
+    feature = featname[feature_idx]
+    internal_id = get_internal_ids([feature], mapping=otu_to_internal_map)
+    uw_u_D = beta_diversity(kernel, counts=x,
+                            tree=tree, otu_ids=internal_id)
 
     return uw_u_D.data
 
@@ -212,6 +211,10 @@ if __name__ == "__main__":
     mb_df = mb_df.drop(columns=["binary_outcome", "Unnamed: 0", "uid"])
     mb_df = mb_df.T
 
-    tree, INTERNALID_TO_OTUID_MAPPING, OTUID_TO_INTERNALID_MAPPING = get_phylogenetic_tree()
-    d = pw_dist_unifrac(np.array(mb_df)[0], feature_idx=3, featname=mb_df.index, tree=tree, otu_to_internal_map=OTUID_TO_INTERNALID_MAPPING)
+    x = np.array([[22],
+               [0],
+               [0]])
+    
+    tree, internal_ids, INTERNALID_TO_OTUID_MAPPING, OTUID_TO_INTERNALID_MAPPING = get_phylogenetic_tree(features=mb_df.index)
+    d = pw_dist_unifrac(x, feature_idx=3, featname=mb_df.index, tree=tree, otu_to_internal_map=OTUID_TO_INTERNALID_MAPPING, kernel="unweighted_unifrac")
     print(d)

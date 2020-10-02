@@ -42,9 +42,9 @@ def hsic_lasso(X, Y, y_kernel, x_kernel='Gaussian', zero_adjust=True, n_jobs=-1,
     L = np.reshape(L, (n * B * M,1))
 
     # Construct the phylogenetic tree here once and pass it around
-    tree, internal_to_otu_map, otu_to_internal_map = None, None, None
+    tree, internal_ids, internal_to_otu_map, otu_to_internal_map = None, None, None, None
     if x_kernel == "UnweightedUniFrac" or x_kernel == "WeightedUniFrac":
-        tree, internal_to_otu_map, otu_to_internal_map = get_phylogenetic_tree()
+        tree, internal_ids, internal_to_otu_map, otu_to_internal_map = get_phylogenetic_tree(features=featname)
 
     # Preparing design matrix for HSIC Lars
     # TODO - what is the output like?
@@ -88,6 +88,9 @@ def compute_kernel(x, kernel, B=0, M=1, discarded=0, zero_adjust=True, featname=
     if kernel == "Gaussian":
         x = (x / (x.std() + 10e-20)).astype(np.float32)
 
+    """
+    This method goes through and computes blocks of kernels for single features, for random subsets of samples.
+    """
     st = 0
     ed = B ** 2
     index = np.arange(n)
