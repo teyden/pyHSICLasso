@@ -145,7 +145,7 @@ def pw_dist_unifrac(x, feature_idx, featname, tree, otu_to_internal_map):
     sheared_tree = tree.shear(names=all_internal_ids)
 
     uw_u_D = beta_diversity("unweighted_unifrac", counts=x,
-                            tree=sheared_tree, otu_ids=[internal_id])
+                            tree=sheared_tree, otu_ids=internal_id)
 
     return uw_u_D.data
 
@@ -213,5 +213,5 @@ if __name__ == "__main__":
     mb_df = mb_df.T
 
     tree, INTERNALID_TO_OTUID_MAPPING, OTUID_TO_INTERNALID_MAPPING = get_phylogenetic_tree()
-    d = pw_dist_unifrac(mb_df, featname=mb_df.index, tree=tree, otu_to_internal_map=OTUID_TO_INTERNALID_MAPPING)
+    d = pw_dist_unifrac(np.array(mb_df)[0], feature_idx=3, featname=mb_df.index, tree=tree, otu_to_internal_map=OTUID_TO_INTERNALID_MAPPING)
     print(d)
