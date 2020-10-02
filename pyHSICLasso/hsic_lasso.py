@@ -82,6 +82,7 @@ def compute_kernel(x, kernel, B = 0, M = 1, discarded = 0, zero_adjust=True, fea
     if kernel == "Gaussian":
         x = (x / (x.std() + 10e-20)).astype(np.float32)
 
+    tree, internal_to_otu_map, otu_to_internal_map = None, None, None
     if kernel == "UnweightedUniFrac" or kernel == "WeightedUniFrac":
         tree, internal_to_otu_map, otu_to_internal_map = get_phylogenetic_tree()
 
@@ -96,8 +97,6 @@ def compute_kernel(x, kernel, B = 0, M = 1, discarded = 0, zero_adjust=True, fea
         for i in range(0, n - discarded, B):
             j = min(n, i + B)
             
-            # All rows (the outcome variables), just columns i to j (the samples)
-
             # Grabs random columns between i and j of index, the random container of indices between 0:n
             block = x[:,index[i:j]]
             if kernel == 'Gaussian':
