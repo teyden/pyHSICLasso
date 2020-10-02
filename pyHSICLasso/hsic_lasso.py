@@ -107,7 +107,7 @@ def compute_kernel(x, kernel, B=0, M=1, discarded=0, zero_adjust=True, featname=
                 k = kernel_delta_norm(block, block)
             elif kernel in ["Jaccard", "BrayCurtis", "UnweightedUniFrac"]:  # TODO test this; how is this k diff from the above?
                 k = _compute_custom_kernel(
-                    block.T, kernel, feature_idx, zero_adjust, featname, tree, otu_to_internal_map)
+                    block.T, kernel, zero_adjust=zero_adjust, featname=featname, feature_idx=feature_idx, tree=tree, otu_to_internal_map=otu_to_internal_map)
             else:
                 raise Exception("Invalid kernel selection.")
 
