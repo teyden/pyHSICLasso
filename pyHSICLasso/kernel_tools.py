@@ -62,7 +62,7 @@ def kernel_gaussian(X_in_1, X_in_2, sigma):
 #####################################################################################
 
 
-def kernel_custom(X, kernel, zero_adjust=False, featname=None, tree=None, otu_to_internal_map=None):
+def kernel_custom(X, kernel, feature_idx, zero_adjust=False, featname=None, tree=None, otu_to_internal_map=None):
     if zero_adjust:
         """
         Cite: https://github.com/phytomosaic/ecole/blob/master/R/bray0.R
@@ -92,7 +92,7 @@ def kernel_custom(X, kernel, zero_adjust=False, featname=None, tree=None, otu_to
         D = pairwise_distances(X, metric="braycurtis")
         D = (2 * D) / (1 + D)
     if kernel == "unweighted_unifrac":
-        D = pw_dist_unifrac(X, featname, tree, otu_to_internal_map)
+        D = pw_dist_unifrac(X, feature_idx, featname, tree, otu_to_internal_map)
     else:
         # TODO - unifrac can be implemented using beta_diversity.unweighted_unifrac
         # it creates a distance matrix
@@ -140,16 +140,17 @@ def get_phylogenetic_tree():
 
     return (tree, INTERNALID_TO_OTUID_MAPPING, OTUID_TO_INTERNALID_MAPPING)
 
-def pw_dist_unifrac(X, featname, tree, otu_to_internal_map):    
+def pw_dist_unifrac(x, feature_idx, featname, tree, otu_to_internal_map):
+    feature = featname[feature_idx]
+
     internal_ids = get_internal_ids(featname, mapping=otu_to_internal_map)
 
     sheared_tree = tree.shear(names=internal_ids)
+    # X.index = internal_ids
+    # X_array = X.T.to_numpy()
 
-    X.index = internal_ids
-    X_array = X.T.to_numpy()
-
-    uw_u_D = beta_diversity("unweighted_unifrac", counts=X_array,
-        tree=sheared_tree, otu_ids=internal_ids)
+    uw_u_D = beta_diversity("unweighted_unifrac", counts=x,
+                            tree=sheared_tree, otu_ids=[feature])
 
     return uw_u_D.data
 

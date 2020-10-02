@@ -41,10 +41,15 @@ def hsic_lasso(X, Y, y_kernel, x_kernel='Gaussian', zero_adjust=True, n_jobs=-1,
     L = compute_kernel(Y, y_kernel, B, M, discarded)
     L = np.reshape(L,(n * B * M,1))
 
+    # Construct the phylogenetic tree here once and pass it around
+    tree, internal_to_otu_map, otu_to_internal_map = None, None, None
+    if x_kernel == "UnweightedUniFrac" or x_kernel == "WeightedUniFrac":
+        tree, internal_to_otu_map, otu_to_internal_map = get_phylogenetic_tree()
+
     # Preparing design matrix for HSIC Lars
     # TODO - what is the output like?
     result = Parallel(n_jobs=n_jobs)([delayed(parallel_compute_kernel)(
-        np.reshape(X[k,:],(1,n)), x_kernel, k, B, M, n, discarded, zero_adjust, featname) for k in range(d)])
+        np.reshape(X[k, :], (1, n)), x_kernel, k, B, M, n, discarded, zero_adjust, featname, tree, otu_to_internal_map) for k in range(d)])
 
     # non-parallel version for debugging purposes
     # result = []
@@ -71,7 +76,8 @@ def _compute_custom_kernel(x, kernel, zero_adjust=True, featname=None, tree=None
         print("Kernel metric provided doesn't match valid options.")
     return kernel_custom(x, _kernel, zero_adjust, featname, tree, otu_to_internal_map)
 
-def compute_kernel(x, kernel, B = 0, M = 1, discarded = 0, zero_adjust=True, featname=None):
+
+def compute_kernel(x, kernel, feature_idx, B=0, M=1, discarded=0, zero_adjust=True, featname=None, tree=None, otu_to_internal_map=None):
 
     d,n = x.shape
 
@@ -81,10 +87,6 @@ def compute_kernel(x, kernel, B = 0, M = 1, discarded = 0, zero_adjust=True, fea
     # Normalize data
     if kernel == "Gaussian":
         x = (x / (x.std() + 10e-20)).astype(np.float32)
-
-    tree, internal_to_otu_map, otu_to_internal_map = None, None, None
-    if kernel == "UnweightedUniFrac" or kernel == "WeightedUniFrac":
-        tree, internal_to_otu_map, otu_to_internal_map = get_phylogenetic_tree()
 
     st = 0
     ed = B ** 2
@@ -119,5 +121,6 @@ def compute_kernel(x, kernel, B = 0, M = 1, discarded = 0, zero_adjust=True, fea
 
     return K
 
-def parallel_compute_kernel(x, kernel, feature_idx, B, M, n, discarded, zero_adjust, featname):
-    return (feature_idx, compute_kernel(x, kernel, B, M, discarded, zero_adjust, featname))
+
+def parallel_compute_kernel(x, kernel, feature_idx, B, M, n, discarded, zero_adjust, featname, tree, otu_to_internal_map):
+    return (feature_idx, compute_kernel(x, kernel, feature_idx, B, M, discarded, zero_adjust, featname, tree, otu_to_internal_map))
