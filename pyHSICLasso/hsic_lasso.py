@@ -39,7 +39,7 @@ def hsic_lasso(X, Y, y_kernel, x_kernel='Gaussian', zero_adjust=True, n_jobs=-1,
 
     # Computes the kernel for the outcome
     L = compute_kernel(Y, y_kernel, B, M, discarded)
-    L = np.reshape(L,(n * B * M,1))
+    L = np.reshape(L, (n * B * M,1))
 
     # Construct the phylogenetic tree here once and pass it around
     tree, internal_to_otu_map, otu_to_internal_map = None, None, None
@@ -69,15 +69,15 @@ def hsic_lasso(X, Y, y_kernel, x_kernel='Gaussian', zero_adjust=True, n_jobs=-1,
     return K, KtL, L
 
 
-def _compute_custom_kernel(x, kernel, zero_adjust=True, featname=None, tree=None, otu_to_internal_map=None):
+def _compute_custom_kernel(x, kernel, zero_adjust=True, featname=None, feature_idx=None, tree=None, otu_to_internal_map=None):
     try:    
         _kernel = CustomKernel[kernel].value
     except:
         print("Kernel metric provided doesn't match valid options.")
-    return kernel_custom(x, _kernel, zero_adjust, featname, tree, otu_to_internal_map)
+    return kernel_custom(x, _kernel, zero_adjust, featname, feature_idx, tree, otu_to_internal_map)
 
 
-def compute_kernel(x, kernel, feature_idx, B=0, M=1, discarded=0, zero_adjust=True, featname=None, tree=None, otu_to_internal_map=None):
+def compute_kernel(x, kernel, B=0, M=1, discarded=0, zero_adjust=True, featname=None, feature_idx=None, tree=None, otu_to_internal_map=None):
 
     d,n = x.shape
 
@@ -107,7 +107,7 @@ def compute_kernel(x, kernel, feature_idx, B=0, M=1, discarded=0, zero_adjust=Tr
                 k = kernel_delta_norm(block, block)
             elif kernel in ["Jaccard", "BrayCurtis", "UnweightedUniFrac"]:  # TODO test this; how is this k diff from the above?
                 k = _compute_custom_kernel(
-                    block.T, kernel, zero_adjust, featname, tree, otu_to_internal_map)
+                    block.T, kernel, feature_idx, zero_adjust, featname, tree, otu_to_internal_map)
             else:
                 raise Exception("Invalid kernel selection.")
 
@@ -123,4 +123,4 @@ def compute_kernel(x, kernel, feature_idx, B=0, M=1, discarded=0, zero_adjust=Tr
 
 
 def parallel_compute_kernel(x, kernel, feature_idx, B, M, n, discarded, zero_adjust, featname, tree, otu_to_internal_map):
-    return (feature_idx, compute_kernel(x, kernel, feature_idx, B, M, discarded, zero_adjust, featname, tree, otu_to_internal_map))
+    return (feature_idx, compute_kernel(x, kernel, B, M, discarded, zero_adjust, featname, feature_idx, tree, otu_to_internal_map))

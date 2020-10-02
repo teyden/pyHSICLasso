@@ -62,7 +62,7 @@ def kernel_gaussian(X_in_1, X_in_2, sigma):
 #####################################################################################
 
 
-def kernel_custom(X, kernel, feature_idx, zero_adjust=False, featname=None, tree=None, otu_to_internal_map=None):
+def kernel_custom(X, kernel, zero_adjust=False, featname=None, feature_idx=None, tree=None, otu_to_internal_map=None):
     if zero_adjust:
         """
         Cite: https://github.com/phytomosaic/ecole/blob/master/R/bray0.R
