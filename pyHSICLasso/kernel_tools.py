@@ -90,7 +90,7 @@ def kernel_custom(X, kernel, zero_adjust=False, featname=None, feature_idx=None,
         # Temporarily match the Jaccard computation with the vegan::vegdist implementation in R.
         D = pairwise_distances(X, metric="braycurtis")
         D = (2 * D) / (1 + D)
-    if kernel == "unweighted_unifrac":
+    if kernel in ["unweighted_unifrac", "weighted_unifrac"]:
         D = pw_dist_unifrac(X, feature_idx, featname, tree, otu_to_internal_map, kernel)
     else:
         D = pairwise_distances(X, metric=kernel)
